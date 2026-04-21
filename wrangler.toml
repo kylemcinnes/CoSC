@@ -1,0 +1,13 @@
+# Cloudflare Workers config for churchofsecondchances.ca — used by Wrangler with the
+# @opennextjs/cloudflare adapter. The ASSETS binding serves files from .open-next/assets
+# after `opennextjs-cloudflare build`. Deploy via `npm run deploy`.
+
+name = "churchofsecondchances"
+compatibility_date = "2025-03-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Required for Next.js static assets and assets binding
+assets = { directory = ".open-next/assets", binding = "ASSETS" }
+
+[observability]
+enabled = true
