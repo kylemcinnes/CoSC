@@ -83,7 +83,7 @@ async function HomeContent() {
         <Separator />
         <div className="prose prose-neutral max-w-none text-muted-foreground prose-p:leading-relaxed">
           <p>
-            Under the pastoral leadership of <strong className="text-foreground">Pastor Frank Juarez</strong>, Church of
+            Under the pastoral leadership of <strong className="text-foreground">Pastor Justin Roberts</strong>, Church of
             Second Chances exists to lift up the name of Jesus among neighbors across the GTA — especially those who feel
             overlooked, weighed down by addiction, or like the “prodigal” who is not sure there is still a seat at the
             table.
