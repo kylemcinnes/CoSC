@@ -1,10 +1,12 @@
+// These env vars must also be set in the Cloudflare Worker Settings → Environment Variables.
+
 import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
+import { cookies, type UnsafeUnwrappedCookies } from 'next/headers'
 
 import type { Database } from '@/types/database'
 
-export async function createClient() {
-  const cookieStore = await cookies()
+export function createClient() {
+  const cookieStore = cookies() as unknown as UnsafeUnwrappedCookies
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,14 +18,9 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) => {
-              cookieStore.set(name, value, options)
-            })
+            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
           } catch {
-            // Ignore errors in Cloudflare Workers edge runtime.
-            // The setAll method is sometimes called from Server Components,
-            // which is not fully supported in the Workers runtime.
-            // Auth flows still work correctly.
+            // Cloudflare Workers edge runtime limitation - ignore setAll from Server Components
           }
         },
       },
