@@ -14,7 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { HeroIllustration } from "@/components/hero-illustration";
 import { createClient } from "@/lib/supabase/server";
 import { sermonThumbnailUrl } from "@/lib/media";
-import { SITE_TAGLINE, SITE_NAME, getSiteUrl } from "@/lib/site";
+import { SITE_TAGLINE, SITE_NAME, getSiteUrl, LEAD_PASTOR_NAME } from "@/lib/site";
 
 import { cn } from "@/lib/utils";
 
@@ -97,7 +97,8 @@ async function HomeContent() {
         <Separator />
         <div className="prose prose-neutral max-w-none text-muted-foreground prose-p:leading-relaxed">
           <p>
-            Under the pastoral leadership of <strong className="text-foreground">Pastor Justin Roberts</strong>, Church of
+            Under the pastoral leadership of{" "}
+            <strong className="text-foreground">Pastor {LEAD_PASTOR_NAME}</strong>, Church of
             Second Chances exists to lift up the name of Jesus among neighbors across the GTA — especially those who feel
             overlooked, weighed down by addiction, or like the “prodigal” who is not sure there is still a seat at the
             table.
