@@ -2,7 +2,7 @@
 # @opennextjs/cloudflare adapter. `main` is the Worker bundle; ASSETS serves files from
 # `.open-next/assets` after `opennextjs-cloudflare build`. Deploy via `npm run deploy`.
 
-name = "churchofsecondchances"
+name = "cosc"
 # OpenNext output — required with `assets.binding` (otherwise Wrangler treats this as assets-only).
 main = ".open-next/worker.js"
 compatibility_date = "2025-03-01"
