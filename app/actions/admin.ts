@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { requireAdmin } from "@/lib/auth";
+import { getNextSundayServiceToronto } from "@/lib/sunday-toronto";
 
 import { eventSchema, sermonSchema } from "./schemas";
 
@@ -31,6 +32,7 @@ export async function createEvent(formData: FormData): Promise<void> {
   }
   revalidatePath("/admin");
   revalidatePath("/live");
+  revalidatePath("/events");
   redirect("/admin");
 }
 
@@ -46,6 +48,7 @@ export async function toggleEventLive(formData: FormData): Promise<void> {
   }
   revalidatePath("/admin");
   revalidatePath("/live");
+  revalidatePath("/events");
   redirect("/admin");
 }
 
@@ -135,4 +138,79 @@ export async function createSermon(formData: FormData): Promise<void> {
   revalidatePath("/sermons");
   revalidatePath("/admin");
   redirect("/admin");
+}
+
+/** Prefix for idempotent demo rows (safe for SQL LIKE / ILIKE). */
+const SEED_PREFIX = "COSC seed demo — ";
+
+/** Inserts demo sermons + one upcoming Sunday event (idempotent prefix `[COSC Seed]`). */
+export async function seedSampleData(): Promise<void> {
+  const { supabase, user } = await requireAdmin();
+
+  await supabase.from("sermons").delete().like("title", `${SEED_PREFIX}%`);
+  await supabase.from("events").delete().like("title", `${SEED_PREFIX}%`);
+
+  const nextSunday = getNextSundayServiceToronto();
+  const demoVideo = "https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.webm";
+
+  const { error: evErr } = await supabase.from("events").insert({
+    title: `${SEED_PREFIX} Sunday gathering`,
+    description: "Sample upcoming service row — safe to delete from the Table Editor.",
+    starts_at: nextSunday.toISOString(),
+    is_live: false,
+    created_by: user.id,
+  });
+  if (evErr) {
+    redirect("/admin?error=seed_event");
+  }
+
+  const { error: serErr } = await supabase.from("sermons").insert([
+    {
+      title: `${SEED_PREFIX} The Father still runs`,
+      description: "Grace for prodigals — sample sermon for layout and search.",
+      preached_at: new Date().toISOString().slice(0, 10),
+      duration_seconds: 2100,
+      video_url: demoVideo,
+      key_verses: ["Luke 15:11-32", "John 3:16"],
+      tags: ["Grace", "Second Chances", "Repentance"],
+      bible_books: ["Luke", "John"],
+      transcript: [],
+      created_by: user.id,
+    },
+    {
+      title: `${SEED_PREFIX} New mercies this morning`,
+      description: "Hope for weary saints — sample sermon.",
+      preached_at: new Date(Date.now() - 7 * 864e5).toISOString().slice(0, 10),
+      duration_seconds: 1850,
+      video_url: demoVideo,
+      key_verses: ["Lamentations 3:22-23"],
+      tags: ["Hope", "Mercy"],
+      bible_books: ["Lamentations"],
+      transcript: [],
+      created_by: user.id,
+    },
+    {
+      title: `${SEED_PREFIX} Port Credit invitation`,
+      description: "Jesus welcomes sinners — sample sermon.",
+      preached_at: new Date(Date.now() - 14 * 864e5).toISOString().slice(0, 10),
+      duration_seconds: 1720,
+      video_url: null,
+      audio_url: null,
+      key_verses: ["Matthew 11:28-30"],
+      tags: ["Invitation", "Rest"],
+      bible_books: ["Matthew"],
+      transcript: [],
+      created_by: user.id,
+    },
+  ]);
+  if (serErr) {
+    redirect("/admin?error=seed_sermon");
+  }
+
+  revalidatePath("/");
+  revalidatePath("/sermons");
+  revalidatePath("/events");
+  revalidatePath("/live");
+  revalidatePath("/admin");
+  redirect("/admin?seed=1");
 }

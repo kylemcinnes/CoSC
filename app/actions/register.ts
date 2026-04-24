@@ -1,88 +1,70 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { createClient } from "@/lib/supabase/server";
 import { getSiteUrl } from "@/lib/site";
 
-import { registerSchema } from "./schemas";
+import { registerSignUpSchema } from "./schemas";
 
 export type RegisterState = { ok: boolean; message?: string } | null;
 
 /**
- * Join-the-family flow: magic link (email) and/or SMS OTP (phone) via Supabase Auth.
- * Preferences are stored on auth.users.raw_user_meta_data and copied to public.profiles by DB trigger.
- *
- * Twilio: enable Phone provider in Supabase + set Twilio credentials (Dashboard).
- * Welcome email: wire Auth Hook or Database Webhook → Edge Function (see supabase/functions/send-welcome-email).
+ * Email sign-up via Supabase Auth `signUp`. Profile row is created by DB trigger; we pass
+ * `notify_*` defaults in user metadata (all true). Phone + name applied when session exists
+ * or via trigger metadata on first insert.
  */
-export async function registerWithSupabase(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
-  const parsed = registerSchema.safeParse({
+export async function registerFamily(_prev: RegisterState, formData: FormData): Promise<RegisterState> {
+  const parsed = registerSignUpSchema.safeParse({
     fullName: formData.get("fullName"),
     email: formData.get("email"),
     phone: formData.get("phone"),
-    notifyEmail: formData.get("notifyEmail") === "on",
-    notifySms: formData.get("notifySms") === "on",
-    notifyPush: formData.get("notifyPush") === "on",
+    password: formData.get("password"),
   });
 
   if (!parsed.success) {
-    return { ok: false, message: "Please check the form and try again." };
+    const msg = parsed.error.flatten().fieldErrors.password?.[0] ?? "Please check the form and try again.";
+    return { ok: false, message: msg };
   }
 
-  const { fullName, email, phone, notifyEmail, notifySms, notifyPush } = parsed.data;
-  if (!email && !phone) {
-    return {
-      ok: false,
-      message: "Please share an email or phone number so we can stay in touch.",
-    };
-  }
-
-  const supabase = await createClient();
+  const { fullName, email, phone, password } = parsed.data;
+  const supabase = createClient();
   const origin = getSiteUrl();
-  const userMeta = {
-    full_name: fullName ?? "",
-    phone: phone ?? "",
-    notify_email: notifyEmail,
-    notify_sms: notifySms,
-    notify_push: notifyPush,
-  };
 
-  if (email) {
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: `${origin}/auth/callback?next=/dashboard?welcome=1`,
-        data: userMeta,
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password,
+    options: {
+      emailRedirectTo: `${origin}/auth/callback?next=/?joined=1`,
+      data: {
+        full_name: fullName ?? "",
+        phone: phone ?? "",
+        notify_email: true,
+        notify_sms: true,
+        notify_push: true,
       },
-    });
-    if (error) {
-      return { ok: false, message: error.message };
-    }
+    },
+  });
+
+  if (error) {
+    return { ok: false, message: error.message };
   }
 
-  if (phone) {
-    const { error } = await supabase.auth.signInWithOtp({
-      phone,
-      options: {
-        shouldCreateUser: true,
-        channel: "sms",
-        data: userMeta,
-      },
-    });
-    if (error) {
-      return { ok: false, message: error.message };
-    }
+  if (data.user && data.session) {
+    await supabase
+      .from("profiles")
+      .update({
+        full_name: fullName || null,
+        phone: phone || null,
+        notify_email: true,
+        notify_sms: true,
+        notify_push: true,
+      })
+      .eq("id", data.user.id);
   }
 
-  if (phone && !email) {
-    redirect("/auth/verify-phone");
-  }
-
-  if (email && phone) {
-    redirect("/register?pending=both");
-  }
-
-  redirect("/register?pending=email");
+  revalidatePath("/");
+  revalidatePath("/dashboard");
+  redirect("/?joined=1");
 }

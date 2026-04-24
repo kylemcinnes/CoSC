@@ -1,8 +1,12 @@
+import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
 import { ArrowRight, HeartHandshake, PlayCircle } from "lucide-react";
 
+import { RegisterForm } from "@/components/register-form";
+import { JoinedWelcome } from "@/components/joined-welcome";
+import { EventsSection } from "@/components/events-section";
 import { buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -10,14 +14,20 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { HeroIllustration } from "@/components/hero-illustration";
 import { createClient } from "@/lib/supabase/server";
 import { sermonThumbnailUrl } from "@/lib/media";
-import { SITE_TAGLINE, SITE_NAME } from "@/lib/site";
+import { SITE_TAGLINE, SITE_NAME, getSiteUrl } from "@/lib/site";
 
 import { cn } from "@/lib/utils";
 
 export const revalidate = 60;
 
+export const metadata: Metadata = {
+  title: "Home",
+  description: `${SITE_NAME} — ${SITE_TAGLINE} Serving Port Credit, Mississauga, and the GTA.`,
+  alternates: { canonical: `${getSiteUrl()}/` },
+};
+
 async function HomeContent() {
-  const supabase = await createClient();
+  const supabase = createClient();
 
   const [{ data: latestSermon }, { data: nextEvent }] = await Promise.all([
     supabase.from("sermons").select("*").order("preached_at", { ascending: false }).limit(1).maybeSingle(),
@@ -32,9 +42,7 @@ async function HomeContent() {
         <div className="mx-auto grid max-w-6xl gap-10 px-4 py-12 sm:px-6 lg:grid-cols-2 lg:items-center lg:py-16">
           <div className="space-y-6">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-brand-teal">GTA · Port Credit · Mississauga</p>
-            <h1 className="font-heading text-4xl font-semibold leading-tight text-primary sm:text-5xl">
-              {SITE_NAME}
-            </h1>
+            <h1 className="font-heading text-4xl font-semibold leading-tight text-primary sm:text-5xl">{SITE_NAME}</h1>
             <p className="max-w-xl text-lg leading-relaxed text-muted-foreground">{SITE_TAGLINE}</p>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link
@@ -73,6 +81,12 @@ async function HomeContent() {
       </section>
 
       <section className="mx-auto max-w-6xl space-y-6 px-4 py-14 sm:px-6">
+        <Suspense fallback={<EventsSkeleton />}>
+          <EventsSection />
+        </Suspense>
+      </section>
+
+      <section className="mx-auto max-w-6xl space-y-6 px-4 pb-14 sm:px-6">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="font-heading text-2xl font-semibold text-primary">Who we are</h2>
@@ -167,6 +181,17 @@ async function HomeContent() {
           </Card>
         </div>
       </section>
+
+      <section className="mx-auto max-w-6xl space-y-6 px-4 py-14 sm:px-6">
+        <div className="space-y-2 text-center sm:text-left">
+          <h2 className="font-heading text-2xl font-semibold text-primary">Join the family</h2>
+          <p className="text-sm text-muted-foreground">
+            Create a free account so we can pray for you, send gathering reminders, and share livestream links. Your email
+            is required; everything else is optional.
+          </p>
+        </div>
+        <RegisterForm />
+      </section>
     </>
   );
 }
@@ -180,10 +205,36 @@ function HomeFallback() {
   );
 }
 
-export default function HomePage() {
+function EventsSkeleton() {
   return (
-    <Suspense fallback={<HomeFallback />}>
-      <HomeContent />
-    </Suspense>
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <Skeleton className="h-36 w-full" />
+      <Skeleton className="h-24 w-full" />
+    </div>
+  );
+}
+
+export default async function HomePage() {
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let prefs: { notify_email: boolean; notify_sms: boolean; notify_push: boolean } | null = null;
+  if (user) {
+    const { data } = await supabase.from("profiles").select("notify_email, notify_sms, notify_push").eq("id", user.id).maybeSingle();
+    if (data) prefs = data;
+  }
+
+  return (
+    <>
+      <Suspense fallback={null}>
+        <JoinedWelcome prefs={prefs} />
+      </Suspense>
+      <Suspense fallback={<HomeFallback />}>
+        <HomeContent />
+      </Suspense>
+    </>
   );
 }

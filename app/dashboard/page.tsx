@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const user = await requireUser();
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single();
 
   return (
@@ -50,12 +50,13 @@ export default async function DashboardPage() {
         </CardHeader>
         <CardContent>
           <form action={updateNotificationPreferences} className="space-y-6">
+            <input type="hidden" name="next" value="/dashboard" />
             <NotificationPreferences
               idPrefix="dash"
               defaults={{
                 email: profile?.notify_email ?? true,
-                sms: profile?.notify_sms ?? false,
-                push: profile?.notify_push ?? false,
+                sms: profile?.notify_sms ?? true,
+                push: profile?.notify_push ?? true,
               }}
             />
             <Button type="submit">Save preferences</Button>

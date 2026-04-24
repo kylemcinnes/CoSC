@@ -41,15 +41,13 @@ export default async function RegisterPage({
             <CardTitle className="font-heading text-lg text-primary">Check your email</CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm text-muted-foreground">
-            <p>We sent a magic link to the address you provided. Tap it on the same device to finish signing in.</p>
             <p>
-              After you arrive, you will be redirected to your dashboard with a short welcome message — our little way of
-              saying <em>peace to you</em> in Christ.
+              If your Supabase project requires email confirmation, open the link we sent to verify your address, then
+              sign in from the auth flow your team configures.
             </p>
             <p>
-              Welcome email integration: connect Resend in{" "}
-              <code className="rounded bg-muted px-1">supabase/functions/send-welcome-email</code> and trigger it from an
-              Auth Hook in the Supabase Dashboard.
+              After you are signed in, you can set notification preferences on your dashboard or right on the home page
+              after joining.
             </p>
           </CardContent>
         </Card>

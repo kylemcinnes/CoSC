@@ -3,13 +3,12 @@ import { z } from "zod";
 const emptyToUndef = (v: unknown) =>
   typeof v === "string" && v.trim() === "" ? undefined : v;
 
-export const registerSchema = z.object({
+/** Email + password sign-up (Supabase Auth requires a password for email registration). */
+export const registerSignUpSchema = z.object({
   fullName: z.preprocess(emptyToUndef, z.string().trim().max(120).optional()),
-  email: z.preprocess(emptyToUndef, z.string().trim().email().optional()),
+  email: z.string().trim().email(),
   phone: z.preprocess(emptyToUndef, z.string().trim().max(32).optional()),
-  notifyEmail: z.boolean(),
-  notifySms: z.boolean(),
-  notifyPush: z.boolean(),
+  password: z.string().min(8, "Password must be at least 8 characters."),
 });
 
 export const eventSchema = z.object({

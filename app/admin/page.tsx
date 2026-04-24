@@ -1,4 +1,4 @@
-import { createEvent, createSermon, toggleEventLive } from "@/app/actions/admin";
+import { createEvent, createSermon, seedSampleData, toggleEventLive } from "@/app/actions/admin";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,8 +16,9 @@ export default async function AdminPage({
 }) {
   const sp = await searchParams;
   const err = typeof sp.error === "string" ? sp.error : undefined;
+  const seeded = sp.seed === "1";
 
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: events } = await supabase.from("events").select("*").order("starts_at", { ascending: false }).limit(10);
 
   return (
@@ -32,7 +33,43 @@ export default async function AdminPage({
             Something went wrong ({err}). Check Supabase logs and RLS policies.
           </p>
         ) : null}
+        {seeded ? (
+          <p className="rounded-lg border border-brand-teal/30 bg-brand-teal/10 px-3 py-2 text-sm text-brand-teal">
+            Sample sermons and one event were inserted (titles prefixed with{" "}
+            <code className="rounded bg-muted px-1">COSC seed demo —</code>). Remove them anytime from the Table Editor.
+          </p>
+        ) : null}
       </header>
+
+      <Card className="border-brand-gold/30">
+        <CardHeader>
+          <CardTitle className="font-heading text-lg">Who can use this page?</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Access is enforced by Supabase Row Level Security: your user must have{" "}
+            <code className="rounded bg-muted px-1">profiles.is_admin = true</code>. Set that flag in the Supabase Table
+            Editor (or SQL) for your account — there is no separate admin password in the app yet.
+          </p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="font-heading text-lg">Sample content</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm text-muted-foreground">
+          <p>
+            Seeds three demo sermons (two with a short sample video URL) and one upcoming Sunday event. Existing rows
+            titled <code className="rounded bg-muted px-1">COSC seed demo — …</code> are removed first.
+          </p>
+          <form action={seedSampleData}>
+            <Button type="submit" variant="secondary">
+              Add sample sermons &amp; event
+            </Button>
+          </form>
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>

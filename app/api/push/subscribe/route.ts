@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Invalid subscription payload." }, { status: 400 });
   }
 
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();

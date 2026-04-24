@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 export const revalidate = 15;
 
 export default async function LivePage() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: liveEvent } = await supabase.from("events").select("*").eq("is_live", true).maybeSingle();
 
   const { data: upcoming } = await supabase
@@ -69,17 +69,24 @@ export default async function LivePage() {
 
       <section aria-label="Video player" className="overflow-hidden rounded-2xl border border-border bg-black shadow-lg">
         {/*
-          Owncast embed: replace `src` with your self-hosted Owncast URL when ready, e.g.
-          https://stream.churchofsecondchances.ca/embed/video
+          Owncast embed: replace the placeholder below with your self-hosted Owncast iframe `src`, e.g.
+          https://stream.example.ca/embed/video
         */}
         <div className="relative aspect-video w-full">
           <iframe
             title="Church live stream"
-            className="absolute inset-0 size-full"
+            className="absolute inset-0 size-full opacity-0 pointer-events-none"
             src="about:blank"
             allow="autoplay; fullscreen; picture-in-picture"
             allowFullScreen
           />
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-gradient-to-b from-primary/95 to-primary p-6 text-center text-primary-foreground">
+            <p className="font-heading text-lg font-semibold text-brand-gold sm:text-xl">Live stream from Port Credit</p>
+            <p className="max-w-md text-sm leading-relaxed text-primary-foreground/90">
+              Live stream from Port Credit will appear here (Owncast embed coming soon). Until then, use the countdown
+              above and join us in person in Mississauga when you can.
+            </p>
+          </div>
         </div>
       </section>
 

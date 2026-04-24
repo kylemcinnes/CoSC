@@ -15,7 +15,7 @@ type Props = { params: Promise<{ id: string }> };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data } = await supabase.from("sermons").select("title, description, preached_at").eq("id", id).maybeSingle();
   if (!data) return { title: "Sermon" };
   return {
@@ -33,7 +33,7 @@ function formatTimestamp(sec: number) {
 
 export default async function SermonDetailPage({ params }: Props) {
   const { id } = await params;
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data: sermon } = await supabase.from("sermons").select("*").eq("id", id).maybeSingle();
   if (!sermon) notFound();
 

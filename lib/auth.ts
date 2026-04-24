@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 
 export async function getUser() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
@@ -18,7 +18,7 @@ export async function requireUser() {
 
 export async function requireAdmin() {
   const user = await requireUser();
-  const supabase = await createClient();
+  const supabase = createClient();
   const { data, error } = await supabase
     .from("profiles")
     .select("is_admin")

@@ -180,9 +180,9 @@ begin
     new.email,
     nullif(new.raw_user_meta_data->>'full_name', ''),
     coalesce(nullif(new.raw_user_meta_data->>'phone', ''), new.phone),
-    coalesce((new.raw_user_meta_data->>'notify_email')::boolean, false),
-    coalesce((new.raw_user_meta_data->>'notify_sms')::boolean, false),
-    coalesce((new.raw_user_meta_data->>'notify_push')::boolean, false)
+    coalesce((new.raw_user_meta_data->>'notify_email')::boolean, true),
+    coalesce((new.raw_user_meta_data->>'notify_sms')::boolean, true),
+    coalesce((new.raw_user_meta_data->>'notify_push')::boolean, true)
   )
   on conflict (id) do update set
     email = excluded.email,

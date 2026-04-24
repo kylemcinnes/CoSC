@@ -6,9 +6,15 @@ import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
+function safePrefsRedirect(raw: FormDataEntryValue | null): "/dashboard" | "/" {
+  const v = typeof raw === "string" ? raw.trim() : "";
+  return v === "/" ? "/" : "/dashboard";
+}
+
 export async function updateNotificationPreferences(formData: FormData): Promise<void> {
   const user = await requireUser();
-  const supabase = await createClient();
+  const supabase = createClient();
+  const next = safePrefsRedirect(formData.get("next"));
 
   const notifyEmail = formData.get("notifyEmail") === "on";
   const notifySms = formData.get("notifySms") === "on";
@@ -24,8 +30,9 @@ export async function updateNotificationPreferences(formData: FormData): Promise
     .eq("id", user.id);
 
   if (error) {
-    redirect("/dashboard?prefs=error");
+    redirect(`${next}?prefs=error`);
   }
   revalidatePath("/dashboard");
-  redirect("/dashboard?prefs=saved");
+  revalidatePath("/");
+  redirect(`${next}?prefs=saved`);
 }
